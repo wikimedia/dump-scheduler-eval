@@ -1,0 +1,70 @@
+Suppose we want to use celery right out of the box
+
+we want:
+  to split and recombine jobs outside of celery
+  to know when jobs are done, when they have failed, to deal with retries
+  to be able to see on the web or some other way what is happening with jobs
+  to show progress reports (what about those callbacks eh?)
+
+For now we will submit jobs at top level (dump tasks) to celery and see if that can work
+
+use:
+  rabbitmq for broker
+  redis for storage
+  json (?) for serialization
+  zlib (?) for compression
+
+
+rabbitmq-server, redis  installed
+service rabbitmq-server start  -- ok (using defaults)
+rabbitmqctl status -- emits a whole bunch of useful looking stuff
+
+rabbitmqctl add_user dumpuser somepasswd
+rabbitmqctl add_vhost /dumpvhost
+rabbitmqctl set_user_tags dumpuser dumptag
+rabbitmqctl set_permissions -p /dumpvhost dumpuser ".*" ".*" ".*"
+
+This sets up a namespace for the dump related stuff ("vhost"), a user and password and then gives access to the user
+
+service redis start
+
+Ready to go
+-----------
+
+Things more or less work with the files in this directory on my laptop, run out
+of the directory hardcoded in one of those paths :-P
+
+Keeping the files laid out as in this repo, be at the root of the repo, start the worker:
+   celery -A dumps worker -l info --logfile /home/ariel/wmf/dumps/dumps2.0/schedulers/mylog.txt
+but change the log file path to something that exists for you
+
+You'll see something like:
+
+ -------------- celery@bigtrouble v3.1.20 (Cipater)
+---- **** ----- 
+--- * ***  * -- Linux-4.6.4-301.fc24.x86_64-x86_64-with-fedora-24-Twenty_Four
+-- * - **** --- 
+- ** ---------- [config]
+- ** ---------- .> app:         dumps.dumptasks:0x7f04797ae990
+- ** ---------- .> transport:   amqp://dumpuser:**@localhost:5672//dumpvhost
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 8 (prefork)
+-- ******* ---- 
+--- ***** ----- [queues]
+ -------------- .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . dumps.celery.dumptask
+
+
+Everything else is logged to the log file you specifed above.
+
+Edit workertest.py and change the paths so that you have the path to the
+dumps worker.py script, a working wiki dump config file, and a wiki that
+actually exists in your mysql db.  Then...
+
+From the root of this repo also, run
+   python workertest.py
+
+
