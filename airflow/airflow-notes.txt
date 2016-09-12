@@ -1,0 +1,50 @@
+install is only from pip, no packages around
+pip install of rabbitmq failed, because the set.py is broken, so I relied on
+  distro packages for that
+
+ran:
+
+pip install airflow[celery, mysql, devel]
+export AIRFLOW_HOME=~/airflow
+airflow initdb
+airflow webserver -p 8080
+
+In the middle of one of those, it failed because it tried to autoload all of the examples.
+The examples include things like hive stuff, which we didn't install.  Fix for that is
+to go to ~/airflow/airflow.config and set load examples to False.
+
+created dag file: ~/airflow/airflow_dumps.py
+
+ran it by testing:
+  airflow test dumpstest run_worker some-date-here (date is in format yyyy-mm-dd)
+this does not record any results to the db but just executes the dag. note that I
+specified the name of the specific task to run. who cares.
+
+removed output and then ran it again:
+  airflow backfill dumpstest -s 2016-mm-dd -e 2016-mm-dd  (where the mm-dd were today)
+this records results to db, you can watch progress via the web, etc. ui is nice enough.
+couldn't find an api for getting at job status info though. note that the name of the
+task to run is not specified here, all tasks defined in the dag are run it seems.
+
+didn't test at all: workers on remote hosts, user auth to web, user auth to airflow
+
+While there is a notion of pools (multiple queues) and priorities, start dates for all
+tasks have to be specified when they are submitted.  This seems a bit odd to me, and
+not in accordance with my mental model of how the queues should work.  I had thought
+rather that we would pass all the tasks to the scheduler on a given date and expect
+it to queue them as workers are available, or queue them all and let workers pick them
+up as they have resources to run the tasks. Maybe it amounts to the same thing.
+
+Dependencies are easy enough within one dag file, but I don't know that it's
+possible to specify a dependency of a task in one dag file on a task in another one.
+Recall that we don't necessarily want to run all dump jobs for a wiki together, but
+all stubs on all wikis first (or something equivalent for dumps2.0).  Maybe we
+can work around this using priorities for the different tasks so they get run
+in batches, needs investigation.
+
+
+
+
+
+
+
