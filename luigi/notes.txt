@@ -1,0 +1,57 @@
+Did:
+
+pip install luigi
+Once again there don't seem to be packages around.
+
+created luigi_dumptest.py
+
+ran it by:
+
+PYTHONPATH='.' luigi --module luigi_dumptest DumpTest --wiki tenwiki --date 20160913 --taskname xmlstubsdump --configfile /home/ariel/wmf/dumps/testing/xmldumps/confs/wikidump.conf.multi --scriptpath /home/ariel/wmf/dumps/testing/xmldumps --local-scheduler
+
+This does not use the central scheduler.  Output from the task must be
+captured and logged if you want it logged, this is not done for you
+automatically.
+
+Reruns of the task check if the given target output file exists; if it
+does the task is declared complete.  Removing output for a new run must be
+done outside of Luigi.
+
+Failed runs did not get marked as failed (for example exceptions caused
+by my failure to properly set up the run environment in the Popen call).
+I tried a run with the nonexistent taskname "xmlstubs" and verified
+that from the command line the worker.py script returns 1.  But luigi still
+considered the run a success. It turns out that the run() method shouldn't
+return anything, the only way for an error to be produced is by raising
+an exception.
+
+Retry count can be set by a little method in the class (as seen in the code).
+The retry delay between jobs appears to be global however.
+
+To run with the central scheduler one does the following:
+
+luigid --background --pidfile /home/ariel/src/wmf/dumps/github/scheduler_eval/luigi/centralstuff/pid.txt --logdir /home/ariel/src/wmf/dumps/github/scheduler_eval/luigi/centralstuff  --state-path /home/ariel/src/wmf/dumps/github/scheduler_eval/luigi/centralstuff/state.txt
+
+and indeed it is happily waiting for requests:
+
+ariel     8272  0.0  0.1 254700 20756 ?        S    13:54   0:00 /usr/bin/python /usr/bin/luigid --background --pidfile /home/ariel/src/wmf/dumps/github/scheduler_eval/luigi/centralstuff/pid.txt --logdir /home/ariel/src/wmf/dumps/github/scheduler_eval/luigi/centralstuff --state-path /home/ariel/src/wmf/dumps/github/scheduler_eval/luigi/centralstuff/state.txt
+
+The docs state:
+
+"Task History is an experimental feature in which additional information about
+asks that have been executed are recorded in a relational database for historical
+nalysis."
+
+I'll look at that in depth later.
+
+Running the luigi task execution command without --local-scheduler causes various
+output to appear on the console, and the job is run via the luigi daemon.  A small
+amount of output appears in centralstuff/luigi-server.log showing GET requests
+to the server. (Seriously, "INFO: 200 GET /api/add_task (127.0.0.1) 1.20ms"?  A GET
+request to add something to the queue?)
+
+I ran with the bad job name and checked the web server on default port 8082.  The
+failed job shows up there.  I didn't see it scheduled for a retry.  After the
+default 15 minute delay I still didn't see any activity so there's more to be
+done somewhere to enable retries. Maybe the worker keepalive setting...
+
