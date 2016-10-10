@@ -1,0 +1,14 @@
+# test running dump script worker.py with specific args
+# from oozie
+
+nameNode=hdfs://localhost:9001
+jobTracker=localhost:8032
+queueName=default
+dump_configfile=%(dump_configfile)s
+dump_scriptpath=%(dump_scriptpath)s
+dump_date=%(dump_date)s
+dump_wiki=%(dump_wiki)s
+dump_job=%(dump_job)s
+
+#oozie.wf.application.path=${nameNode}/user/${user.name}/testing/workflow.xml
+oozie.wf.application.path=${nameNode}/user/${user.name}/dumptest

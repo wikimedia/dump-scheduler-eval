@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow-app xmlns="uri:oozie:workflow:0.4"
+    name="dumps-${dump_date}-${dump_wiki}-${dump_job}">
+
+    <parameters>
+
+        <!-- Default values for inner oozie settings -->
+        <property>
+            <name>oozie_launcher_queue_name</name>
+            <value>${queueName}</value>
+        </property>
+        <property>
+            <name>oozie_launcher_memory</name>
+            <value>256</value>
+        </property>
+
+        <!-- Required properties -->
+        <property><name>queueName</name></property>
+        <property><name>nameNode</name></property>
+        <property><name>jobTracker</name></property>
+
+        <!-- dumps job properties-->
+        <property>
+            <name>dump_configfile</name>
+            <description>dumps configuration file</description>
+        </property>
+
+        <property>
+            <name>dump_date</name>
+            <description>Date (YYYY-MM-DD) of dump run</description>
+        </property>
+        <property>
+            <name>dump_job</name>
+            <description>Name of dump job</description>
+        </property>
+    </parameters>
+
+    <start to="run_dump_job"/>
+
+    <action name="run_dump_job">
+        <shell xmlns="uri:oozie:shell-action:0.1">
+            <job-tracker>${jobTracker}</job-tracker>
+            <name-node>${nameNode}</name-node>
+            <configuration>
+                <!--make sure oozie:launcher runs in a low priority queue -->
+                <property>
+                    <name>oozie.launcher.mapred.job.queue.name</name>
+                    <value>${oozie_launcher_queue_name}</value>
+                </property>
+                <property>
+                    <name>oozie.launcher.mapreduce.map.memory.mb</name>
+                    <value>${oozie_launcher_memory}</value>
+                </property>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>startworker.sh</exec>
+            <argument>--scriptpath</argument>
+	    <argument>${dump_scriptpath}</argument>
+            <argument>--configfile</argument>
+            <argument>${dump_configfile}</argument>
+            <argument>--date</argument>
+            <argument>${dump_date}</argument>
+            <argument>--job</argument>
+            <argument>${dump_job}</argument>
+            <argument>--wikiname</argument>
+            <argument>${dump_wiki}</argument>
+	    <file>startworker.sh</file>
+        </shell>
+        <ok to="end"/>
+        <error to="kill"/>
+    </action>
+	
+    <kill name="kill">
+        <message>Action failed, woops</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>
