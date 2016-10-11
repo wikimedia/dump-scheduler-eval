@@ -1,0 +1,11 @@
+The logs linked from the "history" link under the "Tracking UI" column for each job,
+from the Oozie web interface http://localhost:8088/cluster/apps, link to the fqdn
+instead of localhost.  I fixed every hostname and address I could find in the
+configuration files for hadoop and oozie, so that they all say 'localhost', but
+the problem remains.
+
+I still don't know how to pass a path to the shell command via the "exec" tag
+that is on the local file system so that it can run.  If I pass a path in the
+hadoop filesystem and that script relies on other scripts which are on the
+local filesystem and for which the full pathname is provided, those secondary
+scripts all run properly.
