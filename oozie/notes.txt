@@ -1,0 +1,262 @@
+A note about documentation
+--------------------------
+
+I found the Apache's documentation to be thorough and hard to use,
+intended more for reference than anything else.  I found Cloudera's docs
+to be spaghetti-code-like, at least once leading me through several other
+pages back to my starting point when I was lookig for installation help.
+
+When you find a page that's helpful, bookmark it immediately.  It will
+be more valuable than gold later.  I've included a few of these urls
+below, to save you the aggravation.
+
+
+Setup for running these tests
+-----------------------------
+
+Installed Cloudera CDH5.5 packages (hadoop 2.6.0, cdh5.5.2):
+
+hadoop, hadoop-client
+hadoop-hdfs, hadoop-hdfs-datanode, hadoop-hdfs-namenode, hadoop-hdfs-journalnode
+hadoop-mapreduce
+hadoop-yarn, hadoop-yarn-nodemanager, hadoop-yarn-resourcemanager
+oozie, oozie-client
+bigtop-tomcat
+zookeeper
+
+A variety of files were pulled in as dependencies, including:
+hive, pig, scoop, spark-core
+
+Later I found out that in order to configure hadoop so that it appears to be
+set up for a cluster but in fact all the daemons and services are on one
+server, and there is only one node in the hadoop filesystem cluster, it's
+best to start from a special package of config files, hadoop-conf-pseudo,
+so I installed thos.
+
+Still later I found that job history was not preserved unless I installed
+a special package for that: hadoop-mapreduce-historyserver
+
+Fuse-dfs can be used to permit the hadoop filesystem to be mounted as though
+it were a regular filesystem, with some limitations on operations that will
+succeed.  I opted not to do this and to use the standard hdfs dfs -XX commands
+instead.
+
+NOTE THAT java openjdk 1.8.91 and later have a known bug with the cdh5 packages,
+so you will want to either install an earlier version or downgrade to java 1.7.
+See https://issues.apache.org/jira/browse/OOZIE-2533 for details.
+
+---
+
+Configuration:
+
+Hadoop has moved from 1.x to 2.0, which uses yarn and a resource manager.
+Configuration options from the 1.x and 2.x versions are mixed together
+in examples one finds on the web, and some work due to backwards compatibility
+while others don't.
+
+Generally the state of documentation around configuration may be summarized by
+this excerpt from O'Reilly's text "Hadoop: the Definitive Guide (2015)":
+
+  In general, you can tell the component where a property should be set by its
+  name, so the fact that yarn.nodemanager.resource.memory-mb starts with
+  yarn.nodemanager gives you a clue that it can be set only for the node
+  manager daemon. This is not a hard and fast rule, however, so in some cases
+  you may need to resort to trial and error, or even to reading the source.
+
+I found the massive number of components and their roles bewildering and
+likewise poorly documented.
+
+Some of the service components, all of which have a default hostname and port:
+
+  mapreduce jobtracker, mapreduce jobhistory webapp, mapreduce jobhistory admin,
+  mapreduce job history, yarn resource manager, yarn nodemanager, yarn web proxy,
+  yarn timeline service, yarn timeline service webapp, oozie base url,
+  dfs namenode, dfs datanode, dfs namenode backup, dfs journal node, hbase master,
+  hbase master info, hbase region server, hbase region server info, hbase zookeeper,
+  hbase rest
+
+To understand your configuration needs, you first should know that some defaults
+are defined in the code.  XML files (which are not used by the code!!) of default values
+are provided for your reading convenience.  Here are those urls from Cloudera.  I
+assume that the Apache docs also include these; I refer to the Cloudera versions since
+we use those packages.
+
+  https://archive.cloudera.com/cdh5/cdh/5/hadoop/hadoop-project-dist/hadoop-common/core-default.xml
+  https://archive.cloudera.com/cdh5/cdh/5/hadoop/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml
+  https://archive.cloudera.com/cdh5/cdh/5/hadoop/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml
+  https://archive.cloudera.com/cdh5/cdh/5/hadoop/hadoop-yarn/hadoop-yarn-common/yarn-default.xml
+  https://archive.cloudera.com/cdh5/cdh/5/oozie/oozie-default.xml
+
+You can steal property declarations from these and add them to the appropriate configuration
+file as needed.  Here is the correspondence:
+
+  core-default.xml    --  /etc/hadoop/conf/core-site.xml
+  hds-default.xml     --  /etc/hadoop/conf/hdfs-site.xml
+  mapred-default.xml  --  /etc/hadoop/conf/mapred-site.xml
+  yarn-default.xml    --  /etc/hadoop/conf/yarn-site.xml
+  oozie-default.xml   --  /etc/oozie/conf/oozie-site.xml
+
+In general it is best to leave port numbers alone. I changed one, based on settings
+from some example on the web, and found myself having to change that setting in
+several other places, including the "job.properties" file for the oozie test job.
+But more on that later.
+
+HADOOP config
+
+Don't do what I did in /etc/hadoop/conf/core-site.xml and stupidly change the
+port for fs.defaultFS.  Everywhere that these sample files have 9001 in them
+you can ignore the entry and rely on the default port 8020.  Sorry.
+
+In hdfs-site.xml I made sure that all of the below had 127.0.0.1 for the address:
+dfs.datanode.address, dfs.datanode.http.address, dfs.datanode.ipc.address,
+dfs.journalnode.rpc-address, dfs.journalnode.http-address, dfs.namenode.http-address,
+dfs.balancer.address
+I don't know if that's strictly necessary.
+
+In the ill-named mapred-site.xml, all variable names should start with mapreduce.xx,
+not mapred.xx.  This is another one of those loose ends from the hadoop 1.x to 2.x
+changes. mapreduce.framework.name should be set to yarn.  Make sure that
+mapreduce.jobhistory.address, mapreduce.jobhistory.webapp.address,
+mapreduce.jobhistory.admin.address, mapreduce.jobtracker.http.address,
+and mapreduce.tasktracker.http.address are all set to localhost.
+
+In yarn-site.xml you shuld make sure that yarn.nodemanager.hostname,
+yarn.resourcemanager.hostname  and yarn.timeline-service.hostname are
+all set to localhost.
+
+OOZIE config
+
+In core-site.xml in the /etc/oozie/conf directory, you will want to set
+mapreduce.framework.name to 'yarn'.  This is one of the leftovers of the hadoop
+1.x to 2.x version change.
+
+In oozie-site.xml you want to have a look at oozie.base.url, oozie.http.hostname
+and oozie.service.WorkflowAppService.system.libpath.  The first two should be set
+for your cluster of one server (so 'localhost' for the hostname), and the third
+needs to point to the location where the 'oozie shared library' will live. This
+is a library you will install after the packages are installed.
+
+There are two additional files you may need to tinker with. Oozie does not support
+ipv6, so you need to disable it for hadoop.  Edit hadoop-env.sh or create it and add:
+
+  # turn off ipv6 for hadoop. meh
+  export HADOOP_OPTS=-Djava.net.preferIPv4Stack=true
+  export JAVA_HOME=/usr/lib/jvm/jre-1.7.0
+
+You may also need to add an explicit path for the logging support (slf4j), I did not.
+E.g.
+
+  export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:/usr/share/java/slf4j/slf4j-simple.jar
+
+There is also oozie-env.sh which you should take a look at, both for the value of
+OOZIE_HTTP_HOSTNAME (should be localhost for a cluster of one server), and for
+OOZIE_CONFIG which you probably want to set to /etc/oozie/conf.
+
+---
+
+Setup:
+
+
+I had a lot of trouble figuring out which things were supposed to be on the local
+filesystem and which on the hadoop filesystem.  I try to be specific in the instructions
+below, to avoid that problem.  Note that any hadoop filesystem uris start with hdfs://
+
+Format the hdfs filesystem:
+  $ sudo -u hdfs hdfs namenode -format
+
+Start the hadoop filesystem datanode, namenode, and journalnode:
+  sudo hadoop-hdfs-namenode start
+  sudo hadoop-hdfs-journalnode start
+  sudo hadoop-hdfs-datanode start
+
+Make a pile of needed directories on the hadoop filesystem, including
+/tmp, /user/oozie/share, /var/log:
+  sudo /usr/lib/hadoop/libexec/init-hdfs.sh
+
+Start yarn:
+  $ sudo service hadoop-yarn-resourcemanager start
+  $ sudo service hadoop-yarn-nodemanager start 
+  $ sudo service hadoop-mapreduce-historyserver start
+
+Make sure the hdfs and oozie users have hadoop hdfs dirs:
+  # sudo -u hdfs hdfs dfs -ls /user
+
+I didnt make a separate directory for regular users, since this was just for testing.
+I ran my job as the oozie user (yeah yeah I know, horrible).
+
+We use MariaDB (for now) and so of course I set up Oozie to run with that backend.
+As an apporpriately privileged user connected to your database, you will need to do:
+  create database oozie;
+  grant all privileges on oozie.* to 'oozie'@'localhost' identified by 'oozie';
+  grant all privileges on oozie.* to 'oozie'@'%' identified by 'oozie';
+
+You get to manually download the JDBC driver because of license issues. I found it
+here:  https://mariadb.com/kb/en/mariadb/about-mariadb-connector-j/
+Stash it in /var/lib/oozie.
+
+Now add these properties to oozie-site.xml:
+    <property>
+        <name>oozie.service.JPAService.jdbc.driver</name>
+        <value>org.mysql.jdbc.Driver</value>
+    </property>
+    <property>
+        <name>oozie.service.JPAService.jdbc.url</name>
+        <value>jdbc:mysql://localhost:3306/oozie</value>
+    </property>
+    <property>
+        <name>oozie.service.JPAService.jdbc.username</name>
+        <value>oozie</value>
+    </property>
+    <property>
+        <name>oozie.service.JPAService.jdbc.password</name>
+        <value>oozie</value>
+    </property>
+
+Note that 'mysql://' in the path above.  That's not a typo. MariaDB
+uses that url.
+
+I wanted the Oozie web console for my evaluation and you will too, so download
+https://archive.cloudera.com/gplextras/misc/ext-2.2.zip, uncompress it somplace
+and put the results in /var/lib/oozie. DO THIS BEFORE the next step or you will
+wind up copying it by hand to the right place in the hadoop filesystem later
+and being annoyed about poking around in the bash scripts to figure out where
+that 'right place' is.
+
+Make sure the shared lib for yarn set up on the hadoop filesystem in the right place:
+  sudo oozie-setup sharelib create -fs http://localhost:8020 -locallib /usr/lib/oozie/oozie-sharelib-yarn
+Here was another of those places where I had to swap in '9001' because I foolishly
+changed the default port.  You didn't, right?
+
+Now you can stop all those hadoop-hdfs jobs (service hadoop-hdfs-xxx stop); setup is done.
+
+---
+
+Startup:
+
+Finally you can use the scripts in the start_stop directory to start oozie and all the
+hadoop services it needs, and later to stop them all. They just run service XXX start
+for each service, but there are enough of these that it's annoying to type them all
+each time, especially when debugging the setup.
+
+---
+
+Notes:
+
+For information on configuration and setup, I found this url invaluable:
+https://www.cloudera.com/documentation/enterprise/5-5-x/topics/cdh_ig_oozie_configure.html
+
+This list of default ports for services saved me some time and headache:
+https://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.3.6/bk_HDP_Reference_Guide/content/yarn-ports.html
+
+---
+
+FIXME add these:
+ssh to local host setup
+JAVA classpath and regular path needed editing or not?
+what did I add in bash profile for hdfs or oozie user?
+I had to change oozie user shell so I could su - to oozie :-P
+docs on how to run a sample test
+docs on stuff I encountered trying to run my test
+some of the more obscure error messages
+things that still don't work
+special note on output from shell scripts
