@@ -1,0 +1,49 @@
+Running jobs
+------------
+
+I copy over the jobs.properties file and the workflow.xml
+file both to HDFS; strictly speaking I think the jobs.properties
+file could live on the local filesystem of the edge node where
+the user types the oozie command, if an absolute path were
+given to the file at run time.
+
+The startworker.sh script also gets copied over.
+
+Because I decided to generate the job properties file
+from a template, so that I could easily specify different
+dump run dates, dump steps and so on, there's a little
+python script that generates the file for me,
+generate_workflow_files.py.
+
+Because I'm even lazier than that, there is a bash script,
+publish_start_job.sh, that runs the python script and then
+pushes everything necessary out to hdfs; it then calls
+oozie with the specified or default config file, date, wiki
+and dump step to start the dump worker script.
+
+Note that in order to copy the file it cannot already exist;
+one must remove it first.  (Is there an overwrite mode?
+I didn't find one but I did not look hard.)
+
+To run oozie by itself, should you have all your files
+on hdfs manually, you run (as whatever user you have set up,
+for me that was oozie because lazy),
+    oozie  oozie-url-here --config relative-path-to-properties-file -run
+so for us that would be
+    oozie job --oozie http://localhost:11000/oozie --config dumptest/job.properties -run
+The oozie url is the default one, and if you go to that in your
+browser you will be able to monitor currently running jobs as well
+as check details of jobs that ran previously.
+Why is it "-run" but "--oozie"?  No idea.
+
+Besides the oozie web console referred to above, there is the
+hadoop web console, available at http://localhost:8088/cluster/apps
+I'm not clear on which things one wants to track with which console.
+I don't know about an api so we could set up a more dump-user-friendly
+sort of output.  This requires more digging.
+
+I could attach some screenshots but git repo so meh.
+https://www.safaribooksonline.com/library/view/apache-oozie-essentials/9781785880384/graphics/B04860_02_04.jpg
+If the above url works for you, there's one of the oozie web console.
+Here's one of the hadoop console, if it's still working when you read this:
+http://blog.cloudera.com/wp-content/uploads/2014/04/bean-f4.png

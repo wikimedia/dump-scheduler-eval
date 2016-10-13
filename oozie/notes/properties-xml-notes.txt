@@ -1,0 +1,163 @@
+Notes on job properties and workflow app xml files
+--------------------------------------------------
+
+For each job, there should be an xml file that describes the job
+to oozie.  This xml file can include variables which then are
+grabbed from a properties file, which consists of a file with
+entries varname=value.  This properties file is passed to oozie
+when it is invoked from the command line.
+
+You must have an entry for oozie.wf.application.path. This will point
+either to a directory with the file 'workflow.xml' in it, READ VIA
+HDFS, or to an xml file with that or some other name.  For a single
+node cluster, this should have the value
+  hdfs://localhost:8020/user/myusername/some/path/to/app/something.xml
+In these test files it has the value 9001 because I was stupid and
+changed the default port of the name node.  You can also simply set the
+value for the name node variable in the properties file and let oozie
+do most of the work, as is done in these test files:
+  oozie.wf.application.path=${nameNode}/user/${user.name}/dumptest
+
+Nothing else is required to be in the properties file, but anything
+that can vary in the xml file should be defined here.
+
+Certain tags must be set in the xml file. They are:
+  <job-tracker>  -- hostname:port of the yarn resource manager; this
+                    keeps track of cpu and memory useage on all
+		    the worker nodes in the cluster, parcelling
+		    out tasks to a scheduler accordingly. (Hadoop
+		    2.x with YARN!  Used to be something else for
+		    Hadoop 1.x)
+		    for a single node cluster: localhost:8032
+  <name-node>    -- the url to the hadoop node that handles
+                    all requests for directory access and modification,
+		    as well as creating/opening files.
+		    for a single node cluster: hdfs://localhost:8020
+I chose to set these in the job.properties file and have the xml
+file pick up their values; it's not at all necessary.  In theory
+you might have multiple clusters on which you might wish to run
+your job (production and testing, for example), and having these
+values in the properties file instead of the xml file means that
+the xml file does not need to be touched when the job is moved from
+one cluster to another.
+
+In the <configuration> section of the xml file, the following
+properties should be defined:
+   oozie.launcher.mapred.job.queue.name
+       -- Each oozie job is run by a separate "launcher" which is
+          itself a hadoop job.  Hence it occupies a slot in a queue.
+	  If enough launcher jobs fill the queues the user-submitted
+	  jobs are in, those user jobs will never run as they will
+	  be blocked by the launcher jobs.  So launcher jobs should
+	  be in a separate lower priority queue. For simple testing
+	  as we are doing we don't really care, but for anything more,
+	  you will want this.
+   oozie.launcher.mapreduce.map.memory.mb
+       -- limit the amount of memory per slot used by a single map job
+          (the oozie launcher is just another map-reduce job, remember).
+          "it is inferred from mapreduce.map.java.opts and
+	  mapreduce.job.heap.memory-mb.ratio. If java-opts are also not
+	  specified, we set it to 1024." (cloudera docs)  1G is probably
+	  too rich for simple testing on a laptop so shrink appropriately.
+   mapred.job.queue.name
+       -- actually this is deprecated as I now see, we should be using
+          mapreduce.job.queuename.  Hadoop 1.x vs 2.x again.  This is
+	  "default" by, well, default, as that is the one queue defined
+	  out of the box.  This queue will be used by the user-submitted
+	  jobs as opposed to the oozie launcher jobs.
+
+Now, the rest of the workflow.xml file...
+
+There is a section of <parameters>, each defined as a <property> with
+a name and a value.
+
+There is an <action> section which should contain the action name,
+a tag defining the action type (map-reduce, shell, hive, etc),
+the <job-tracker> and <name-node> where the job will be run,
+a <configuration> section which should contain the properties listed
+above, as well as any others you need for oozie or the job itself,
+an <ok> section which provides the name of a section to be used if the
+job completes successfully,
+an <error> section which provides the name of a section to be used
+if the job fails.
+
+There is a <start> tag which should have the attribute 'to' and an
+action name which will be started first when this xml file is read.
+Multiple actions may be specified in the file so it's not as silly
+as you might think.
+
+There is an <end> tag which should have a name attribute and be a
+self-contained tag, generally the last thing in the workflow app
+definition.
+
+That should be enough to get you going; note that in order to
+substitute a value from the job properties file into the xml file,
+you reference the name in the job properties file, like so:
+${name-from-properties-file}
+
+I am not sure about default values. In some cases you need to have
+a configuration variable in the xml file, and you just want it
+to have the default value.  But you don't have to declare that
+value, since it's default.  You just have to define the name.
+Which ones act this way? Good question, have not found a list
+anywhere. Trial and error.
+
+I'm pretty sure I put some of these variables and values in the xml
+file twice or have otherwise redundant entries. FIXME! (Soon)
+
+
+Notes on shell actions
+----------------------
+
+There are several action 'types' i.e. job types that Oozie can
+run.  We wanted the 'shell' action so we could have it run our
+python dump script. In fact it runs a shell script as a wrapper;
+the shell script or any other script directly named in the shell
+action MUST LIVE ON HDFS.  However, scripts it calls by absolute
+path need not; they simply must be on the node... uh... name node?
+data node?  I need to check into what nodes are what somehow.
+Where are the 'compute' nodes?!  Anyways...
+
+Since I didn't want to copy the dump script and its library
+(which may have new or differently named files at any given
+version) into hdfs, I opted for a shell wrapper script.  That
+is start-worker.sh.  Its basic job is to collect command line
+args, pass them to the python script, and redirect any output
+into a file someplace. That 'someplace' ought to be an absolute
+path, or you're going to be wondering where it wrote anything.
+(I did, even after a find on /.)
+
+If you do not capture output to a file, it will disappear into
+the ether.  Trust me.  Not in the oozie/hadoop logs, it's just
+gone.  Yes, you can 'capture' it such that some other action
+in the workflow xml file can process it BUT THEN.... it must be
+in the format name=value, one per line, AND it must not exceed 2KB.
+This is not a general purpose stdout capture mechanism.
+
+There is some buffering going on during these file writes which
+I'm unsure about.  This is why I have multiple echos into the
+output file at different points in the shell script.  Still
+unclear.
+
+As to the shell action definition in the xml file:
+
+The <job-tracker> and <name-node> variables must be defined here.
+Any configuration settings needed, as described earlier, must
+be defined here.
+The script itself is named in an <exec> tag, and the <file>
+tag says to copy (or symlink?) it from its place in the
+default hdfs location for the given user (oozie for us because
+we are lazy) to the location from where it will be run.
+All arguments must be passed via <argument> tags, one argument
+per tag.
+
+That's enough for this test to work.
+
+Useful urls
+-----------
+
+list of deprecated properties and their replacements:
+https://hadoop.apache.org/docs/r2.4.1/hadoop-project-dist/hadoop-common/DeprecatedProperties.html
+
+
+
