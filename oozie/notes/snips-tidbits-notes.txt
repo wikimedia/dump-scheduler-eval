@@ -1,0 +1,154 @@
+This is a collection of various tidbits I came across when
+reading documentation or books about Hadoop 2.x/Oozie.
+
+Hadoop filesystem architecture:
+* All file access is handled through a 'name node' which
+not only checks file access permissions but does all
+directory creation and modification, and all file creations
+and deletions (and presumably renames).
+* All file reads and writes are done by data nodes; the
+user client is told which data node to access for which
+file read/write by the name node.
+* All file writes must be appends. The Hadoop filesystem
+does not support writes at an arbitrary seek point.
+
+File reads are fairly expensive because they must operate
+on an entire hadoop filesystem "block" (by default,
+128MB) and, more generally, on the entire file, if
+compressed.  Files are compressed by default and broken into
+pieces, so getting the last few lines of a file entails
+uncompressing all of these pieces in order, with two
+exceptions:
+  - bz2 compression, since it is block oriented
+  - lzo with "indexing" enabled so that a header at
+    the beginning of the file contains an index of
+    the byte offset of each block (lzo does not mark
+    its blocks with a magic starting sequence of bytes
+    as bz2 does)
+
+File writes, typically done to three nodes for redundancy,
+work like this: data node one (the edge node where the
+job was launched) writes, on success it forwards the data
+to data node two, which writes its copy, on success it
+forwards the data to data node three.
+If the user application sees success, this means at least
+the first copy was written, and any failed replication
+can be done async in the background.
+
+File data only shows up in the filesystem after more than
+a block (128MB by default) of data has been accumulated.
+"Success" means the datanode has it in memory, not
+necessarily written to disk.  One can hdflush() or
+close the file to force the write.  This is of course
+more expensive.  There is apparently an hsync() call,
+check this.
+
+There is a tool to balance the data nodes. I did
+not look at it whatsoever.
+
+We should think of the hadoop filesystem as optimized
+for "write once, read many".
+
+Namenode redundancy:
+* One can have a primary and a secondary name node, with
+regular updates from the primary to the secondary.  The
+secondary must be set as primary manually in case of
+failure of the primary name node.
+* One can have an active and a standby (hot spare) name node.
+The standby acts as a slave and automatically takes over
+the job of the active name node in case of failure of that
+server. This requires some sort of shared storage between
+the active and standy nodes, which is handled by
+Quorum-based storage, using the "Quorum Journal Manager",
+which relies on a group of jornal nodes.
+
+Data redundancy:
+* By default, data in files is written to three different
+nodes.
+* By default, two of the nodes will be in the same rack
+and one will not.  This is done to balance data rendundancy
+and network efficiency.
+* Cross-dc Hadoop is not a thing just yet.
+
+I won't go into the details of map-reduce processing, there
+are plenty of resources on that.  Note however that it is
+possible to use a python script for the "map" and/or the
+"reduce" part of the job if streaming (think of unix
+pipes) is used to get the output of the first as input
+to the second.
+
+Security:
+* Without Kerberos, any user can immpersonate any other
+(still true?)  User names and group names are arbitrary
+strings.
+* Via the REST API, anyone can read/write to the Hadoop
+filesystem (still true?)
+* There is now a Hadoop filesystem acl but it does not
+apply to the other components. Hrm.
+
+There is an interface for users called HUE (Hadoop
+User Experience).  WMF has one, users must be manually
+added. I have not done any testing of it during this
+eval.
+
+Networking/BW:
+* Oozie does not support IPV6.
+* Ports of some services are randomly assigned by default,
+but they can be set as fixed by the appropriate configuration
+option in the corresponding xml file.
+
+Hadoop filesystem usage:
+* Besides the standard somewhat clunky hdfs dfs -<command> syntax,
+  there is a hadoop filesystem client in python called
+  snakebite, current release 2.11.  It handles operations
+  at the level of the entire file; there are no provisions
+  for appending to a file, or reading part of a file.  It
+  does however do file counts, dus and other useful operations.
+* The filesystem can be mounted via fuse_dfs.  It presents
+  as a (mostly) POSIX filesystem.  Don't expect to do
+  arbitrary reads and writes.  Cat/more, ls, du etc all
+  work as expected. Note that fuse_dfs has no underlying support
+  for permissions, all its accesses are done as the user
+  running fuse_dfs.  BTW on stat1002 this is the root user.
+
+Input/output data:
+* In general, input data to jobs is expected to reside in
+  the Hadoop filesystem.  Output is likewiese generated to
+  the Hadoop filesystem.  Those action types that support it,
+  require an output directory be specified.  If this directory
+  already exists, the user's job will not be run, as Hadoop
+  assumes that it has alreayd run and completed successfully.
+  Reruns require that the directory and its contents be removed
+  first.
+* Stdout/err from a shell or other script does not seem to
+  be captured by any log file.  Best is to run any script
+  that may generate output, via a shell wrapper out of the
+  shell action type, and redirect any output/err to a log
+  file in that shell wrapper.
+
+Java versions and paths
+* Java 1.8.91 and on interacts badly with one part of the cdh5
+  oozie (apache's version of it as well).  Downgrade to 1.7.x
+* In /etc/hadoop/conf/hadoo-env.sh, JAVA_HOME needs to be set
+  up to point to the java base. For us we used /usr/lib/jvm/jre-1.7.0
+
+Oozie launcher notes
+* When the user submits an oozie job, the workflow definition
+  is submitted to the oozie server.  It submits a mapreduce
+  job which is called a 'launcher' job.  All configuration
+  settings you have for mapreduce jobs generally also cover
+  oozie launcher jobs.
+* To set specific settings for oozie launcher jobs apart from
+  the rest of the mapreduce jobs, use configuration settings
+  "oozie.launcher.blah.blah.blah"
+* General mapreduce config settings start with "mapreduce.map."
+  so oozie launcher config settings start with
+  "oozie.launcher.mapreduce.map."
+
+Oozie API/architecture
+* REST api, all state information is in a db (we use mariadb)
+* The oozie server consists of a hadoop client and a db client,
+  at a very basic level.
+* All commands except those executed directly by the REST api
+  are queued. (Which ones are those?) There is a fixed thread
+  pool for getting and running commands from the queue(s).
