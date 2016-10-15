@@ -49,6 +49,18 @@ not look at it whatsoever.
 We should think of the hadoop filesystem as optimized
 for "write once, read many".
 
+There is a command for copying one directory to another:
+  hadoop distcp dir1 dir2
+It is intended for large copies; it uses mapreduce to
+copy multiple entries from the directories at once, and
+it can also copy between clusters (not sure how that
+works, maybe one can give the path as
+hdfs://something:port/something?)  For this up to 20
+maps can be used to copy the files, there is only
+one "reducer".  For things like this it is preferred
+that there be more maps in a cluster than nodes, so
+les than 20 nodes, for proper balancing of the jobs.
+
 Namenode redundancy:
 * One can have a primary and a secondary name node, with
 regular updates from the primary to the secondary.  The
@@ -125,6 +137,10 @@ Input/output data:
   that may generate output, via a shell wrapper out of the
   shell action type, and redirect any output/err to a log
   file in that shell wrapper.
+* Before any job is run, the node manager copies the input files
+  from the hadoop filesystem to a local disk (the "cache") for
+  use.  The node cache is 10GB by default (configurable).
+  Eviction is via LRU.
 
 Java versions and paths
 * Java 1.8.91 and on interacts badly with one part of the cdh5
@@ -152,3 +168,37 @@ Oozie API/architecture
 * All commands except those executed directly by the REST api
   are queued. (Which ones are those?) There is a fixed thread
   pool for getting and running commands from the queue(s).
+* Oozie can make a callback to the client at the end of
+  the entire workflow or at the end of an action but at no
+  other time.  any other progress reporting must be handled
+  by the job itself.
+
+YARN
+* Although YARN manages resources and schedules jobs, it
+does not provide any means for the client, the master or
+the job itself to communicate with each other. (Hence Oozie.)
+* One can specify resources required from YARN for each container
+  for a job
+* One can specify that YARN containers be run on specific
+  nodes or racks.
+* Each map or reduce job corresponds to one container.
+* What are these containers exactly? Not containers in the
+  sense of lvm or docker, but just a collection of physical
+  resources allocated to the job.
+* Supposedly YARN is designed to scale to 10,000 nodes and
+  100,000 tasks. (Is that 100,000 map and/or reduce jobs,
+  or tasks that are broken down into map-reduce pieces?)
+* Each instance of an "application" (map-reduce job) has
+  a dedicated "application master" which runs for the duration
+  of the application. What impact does this have on resource
+  usage?
+* Scheduling across/within job queues is via one of three
+  means: FIFO, "Capacity", and "Fair".  The trick is how
+  to set max resources in a queue such that, when another
+  queue is idle, its resources can be used if needed, but
+  when jobs come into that second queue, the jobs run in
+  the first queue with stolen resources can be shot after
+  not too long a waiting period, without causing a lot of
+  slowdown/churn. "Fair" supports this so-called pre-emption,
+  "Capacity" does not (so jobs entering a queue with usurped
+  resources have to wait for completion of running tasks).
