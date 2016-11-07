@@ -1,0 +1,51 @@
+Tested against local MW setup because I could.
+
+for fedora, ignore for anyone else:
+had to install openjdk-1.7.0-devel which I downloaded from $randomplace
+had to install xalan-j2 for f20 also (java, the version I had was for 1.8 instead of 1.7)
+
+
+had to download the MYSQL db jar driver because sqoop wouldn't find the mariadb one;
+  copied it into /usr/lib/sqoop/lib/
+had to use file:///home/blah for path to password file in sqoop and /home/ariel... for the
+  password file for my dynamic queries
+had to be the hdfs user,
+  hdfs dfs -mkdir /user/ariel
+  hdfs dfs -chown ariel /user/ariel
+as me again,
+  hdfs dfs -mkdir /user/ariel/testing
+
+then ran:
+
+python sqoop_page_table.py --jdbc-host localhost --output-dir testing \
+   --verbose --user root \
+   --password-file /home/ariel/wmf/dumps/dumps2.0/oozie/proof_of_concept/youknow \
+   --wiki-file wikis --job-name something
+
+and it ran to completion, output in
+$ hdfs dfs -ls testing/page/wiki_db=elwikt/part-m-00000.avro
+-rw-r--r--   1 ariel supergroup   27788185 2016-11-03 22:53 testing/page/wiki_db=elwikt/part-m-00000.avro
+
+retrieved by
+$ hdfs dfs -get testing/page/wiki_db=elwikt/part-m-00000.avro outputs/
+
+$ ls -lh outputs/part-m-00000.avro 
+-rw-r--r-- 1 ariel ariel 27M Νοέ   3 22:55 outputs/part-m-00000.avro
+
+compare to sql gz:
+$ ls -lth ~/wmf/dumps/testing/xmldumps/dumpruns/public/elwikt/20160810/elwikt-20160810-page.sql.gz 
+-rw-rwxrwx 1 ariel ariel 12M Αύγ  10 19:25 /home/ariel/wmf/dumps/testing/xmldumps/dumpruns/public/elwikt/20160810/elwikt-20160810-page.sql.gz
+
+avro format is twice as large, something to bear in mind.
+gzip of the avro file gives 11M so there's a lot of plain text
+strings in there obviously.
+
+To rerun this, I needed to
+  hdfs dfs -rm testing/page/wiki_db=elwikt/part-m-00000.avro
+  hdfs dfs -rm testing/page/wiki_db=elwikt/_SUCCESS
+  hdfs dfs -rmdir testing/page/wiki_db=elwikt
+
+Output to sql format, which is what we need for these tables:
+not so much. Sqoop talks directly to a mysqldb server, rather than
+being willing to write to a flat file.  No tools seem to be around
+for this, need to investigate other options.
