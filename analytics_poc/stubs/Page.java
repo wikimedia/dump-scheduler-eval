@@ -6,6 +6,8 @@ import java.io.File;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import java.util.List;
+import java.util.ArrayList;
 
 @XmlRootElement
 @XmlType(propOrder={"title", "ns", "id", "revision"})
@@ -15,7 +17,7 @@ public class Page {
     Integer id;
     String title;
     Integer ns;
-    Revision revision;
+    List<Revision> revision;
 
     public Integer getId() {
         return id;
@@ -29,8 +31,12 @@ public class Page {
         return ns;
     }
 
-    public Revision getRevision() {
-        return revision;
+    @XmlElement(name="revision")
+    public List<Revision> getRevision() {
+        if (revision == null) {
+            revision = new ArrayList<Revision>();
+        }
+        return this.revision;
     }
 
     @XmlElement
@@ -46,11 +52,6 @@ public class Page {
     @XmlElement
     public void setNs(Integer ns) {
         this.ns = ns;
-    }
-
-    @XmlElement
-    public void setRevision(Revision revision) {
-        this.revision = revision;
     }
 } 
 

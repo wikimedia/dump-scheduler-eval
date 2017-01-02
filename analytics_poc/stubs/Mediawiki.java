@@ -6,6 +6,8 @@ import java.io.File;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import java.util.List;
+import java.util.ArrayList;
 
 
 @XmlRootElement(namespace="http://www.mediawiki.org/xml/export-0.10/")
@@ -13,7 +15,7 @@ import javax.xml.bind.Marshaller;
 public class Mediawiki {
 
     Siteinfo siteinfo;
-    Page page;
+    List<Page> page;
 
     String version;
     String lang;
@@ -22,8 +24,12 @@ public class Mediawiki {
 	return siteinfo;
     }
 
-    public Page getPage() {
-        return page;
+    @XmlElement(name="page")
+    public List<Page> getPage() {
+        if (page == null) {
+            page = new ArrayList<Page>();
+        }
+        return this.page;
     }
 
     public String getVersion() {
@@ -37,11 +43,6 @@ public class Mediawiki {
     @XmlElement
     public void setSiteinfo(Siteinfo siteinfo) {
         this.siteinfo = siteinfo;
-    }
-
-    @XmlElement
-    public void setPage(Page page) {
-        this.page = page;
     }
 
     @XmlAttribute

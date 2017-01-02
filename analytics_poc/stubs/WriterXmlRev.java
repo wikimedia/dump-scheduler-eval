@@ -29,22 +29,22 @@ public class WriterXmlRev {
 	// always the first part of the wikiname is it? or...? better check this
 	mw.setLang("el");
 
-	Page page = new Page();
 	GetterPage getterPage = new GetterPage();
-	ResultSet pageResults = getterPage.getPage(223276);
+	ResultSet pageResults = getterPage.getPages(223260,223280);
 	while (pageResults.next()) {
+	    Page page = new Page();
 	    field = getterPage.cleanupField("PAGE_ID", pageResults);
 	    page.setId(Integer.parseInt(field));
 	    field = getterPage.cleanupField("PAGE_TITLE", pageResults);
 	    page.setTitle(field);
 	    field = getterPage.cleanupField("PAGE_NAMESPACE", pageResults);
 	    page.setNs(Integer.parseInt(field));
-	    mw.setPage(page);
+	    mw.getPage().add(page);
 
 	    GetterRev getterRev = new GetterRev();
-	    Revision rev = new Revision();
-	    ResultSet revResults = getterRev.getRevision(2700027);
+	    ResultSet revResults = getterRev.getRevisionsForPage(page.getId());
 	    while (revResults.next()) {
+		Revision rev = new Revision();
 		field = getterRev.cleanupField("REV_ID", revResults);
 		rev.setId(Integer.parseInt(field));
 		field = getterRev.cleanupField("REV_COMMENT", revResults);
@@ -84,8 +84,7 @@ public class WriterXmlRev {
 		}
 		rev.setContributor(contr);
 		rev.setText(text);
-		// fixme this must be a list of revisions now
-		page.setRevision(rev);
+		page.getRevision().add(rev);
 	    }
 	}
 	// fixme do we really have to generate the whole thing in

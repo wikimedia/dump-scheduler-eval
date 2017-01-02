@@ -22,10 +22,15 @@ public class GetterRev extends Getter {
 	super();
     }
 
-    public ResultSet getRevision(int Id) throws SQLException {
-	PreparedStatement query = conn.prepareStatement("select * from revision where rev_id = " + Integer.toString(Id));
+    public ResultSet getRevision(int id) throws SQLException {
+	PreparedStatement query = conn.prepareStatement("select * from revision where rev_id = " + Integer.toString(id));
 	ResultSet result = query.executeQuery();
 	return(result);
     }
 
+    public ResultSet getRevisionsForPage(int id) throws SQLException {
+	PreparedStatement query = conn.prepareStatement("select * from revision where rev_page = " + Integer.toString(id));
+	ResultSet result = query.executeQuery();
+	return(result);
+    }
 }

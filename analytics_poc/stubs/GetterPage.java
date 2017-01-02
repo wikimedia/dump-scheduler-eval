@@ -22,11 +22,15 @@ public class GetterPage extends Getter {
 	super();
     }
 
-    public ResultSet getPage(int Id) throws SQLException {
-	// this fails. I wonder what is null here. huh.
-	PreparedStatement query = conn.prepareStatement("select * from page where page_id = " + Integer.toString(Id));
+    public ResultSet getPage(int id) throws SQLException {
+	PreparedStatement query = conn.prepareStatement("select * from page where page_id = " + Integer.toString(id));
 	ResultSet result = query.executeQuery();
 	return(result);
     }
 
+    public ResultSet getPages(int startId, int endId) throws SQLException {
+	PreparedStatement query = conn.prepareStatement("select * from page where page_id > " + Integer.toString(startId) + " and page_id < " + Integer.toString(endId));
+	ResultSet result = query.executeQuery();
+	return(result);
+    }
 }
