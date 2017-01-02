@@ -1,0 +1,9 @@
+# no emacs backup files
+*~
+
+# Ignore java compiled crap
+*.class
+*.jar
+
+# my misc notes etc
+atgmisc
