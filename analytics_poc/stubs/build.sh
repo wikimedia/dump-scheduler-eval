@@ -14,6 +14,7 @@ javac -classpath "$CPATH" Getter.java
 javac -classpath "$CPATH" GetterRev.java
 javac -classpath "$CPATH" GetterPage.java
 javac -classpath "$CPATH" GetterNamespaces.java
+javac -classpath "$CPATH" GetterUrl.java
 javac -classpath "$CPATH" GetterSiteinfo.java
 #javac -classpath "$CPATH" -Xlint:unchecked WriterXmlRev.java
 javac -classpath "$CPATH" WriterXmlRev.java

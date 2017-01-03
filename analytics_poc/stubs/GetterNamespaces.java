@@ -18,36 +18,34 @@ import java.nio.CharBuffer;
 import java.util.List;
 import java.util.ArrayList;
 import net.sf.json.JSONObject;
+import net.sf.json.JSONArray;
+import java.net.MalformedURLException;
+import java.io.IOException;
+import java.util.Iterator;
 
 public class GetterNamespaces {
     List<JSONObject> namespaces;
 
-    GetterNamespaces() {
+    GetterNamespaces() throws MalformedURLException, IOException {
 	namespaces = new ArrayList<JSONObject>();
 
-	JSONObject nsOne = new JSONObject();
-	JSONObject nsTwo = new JSONObject();
-	JSONObject nsThree = new JSONObject();
-	    
-	// these really need to be dug out from the
-	// mediawiki config files, perhaps we can do this
-	// via the mediawiki api. for now here are a few hardcoded
-	// entries.
-	nsOne.put("value", "Συζήτηση");
-	nsOne.put("key", new Integer(1));
-	nsOne.put("case", "case-sensitive");
+	GetterUrl getterUrl = new GetterUrl();
+	String contents = getterUrl.getUrl("https://el.wikipedia.org/w/api.php?action=query&meta=siteinfo&siprop=namespaces&format=json");
+	// who knows the right thing to call here
+	// convert to json object
+	JSONObject namespaceInfo = JSONObject.fromObject(contents);
 
-	nsTwo.put("value", "Χρήστης");
-	nsTwo.put("key", new Integer(2));
-	nsTwo.put("case", "first-letter");
-
-	nsThree.put("value", "Βικιλεξικό");
-	nsThree.put("key", new Integer(4));
-	nsThree.put("case", "case-sensitive");
-
-	namespaces.add(nsOne);
-	namespaces.add(nsTwo);
-	namespaces.add(nsThree);
+	// for each entry in query:namespaces get the id and the case and the '*' entry
+	JSONObject nspacesjson = namespaceInfo.getJSONObject("query");
+	JSONObject nspacearrayjson = nspacesjson.getJSONObject("namespaces");
+	for (Iterator nsIter = nspacearrayjson.keys(); nsIter.hasNext();) {
+	    JSONObject namestuff = nspacearrayjson.getJSONObject((String)nsIter.next());
+	    JSONObject nspace = new JSONObject();
+	    nspace.put("value", namestuff.getString("*"));
+	    nspace.put("key", namestuff.getInt("id"));
+	    nspace.put("case", namestuff.getString("case"));
+	    namespaces.add(nspace);
+	}
     }
 
     public List<JSONObject> getNamespaces() {

@@ -18,13 +18,14 @@ import java.nio.CharBuffer;
 import java.util.List;
 import java.util.ArrayList;
 import net.sf.json.JSONObject;
-
+import java.net.MalformedURLException;
+import java.io.IOException;
 
 public class GetterSiteinfo {
 
     Siteinfo siteinfo;
 
-    GetterSiteinfo() {
+    GetterSiteinfo() throws MalformedURLException, IOException {
 	GetterNamespaces getterNs = new GetterNamespaces();
 	List<JSONObject> namespacesJson = getterNs.getNamespaces();
 	Namespaces namespaces = new Namespaces();
