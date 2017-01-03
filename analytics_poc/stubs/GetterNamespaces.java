@@ -30,7 +30,7 @@ public class GetterNamespaces {
 	namespaces = new ArrayList<JSONObject>();
 
 	GetterUrl getterUrl = new GetterUrl();
-	String contents = getterUrl.getUrl("https://el.wikipedia.org/w/api.php?action=query&meta=siteinfo&siprop=namespaces&format=json");
+	String contents = getterUrl.getUrl("http://localhost/elwikt/api.php?action=query&meta=siteinfo&siprop=namespaces&format=json");
 	// who knows the right thing to call here
 	// convert to json object
 	JSONObject namespaceInfo = JSONObject.fromObject(contents);

@@ -29,7 +29,6 @@ public class GetterSiteinfo {
 	GetterNamespaces getterNs = new GetterNamespaces();
 	List<JSONObject> namespacesJson = getterNs.getNamespaces();
 	Namespaces namespaces = new Namespaces();
-	System.out.println("size of namespacesJson is now " + namespacesJson.size());
 	for (JSONObject nspaceJson: namespacesJson) {
 	    Namespace nspace = new Namespace();
 	    nspace.setKey(nspaceJson.getInt("key"));
@@ -38,20 +37,21 @@ public class GetterSiteinfo {
 	    namespaces.getNamespace().add(nspace);
 	}
 	List<Namespace> toput = namespaces.getNamespace();
-	System.out.println("size of namespaces is now " + toput.size());
-	// ok so here we are with three namespaces, why doesn't the set work right                                                                                          
-	// for retrieval?
 
-	// fixme for now we are hardcoding but eventually, get via                                                                                                          
-	// the api? or...?                                                                                                                                                  
+	// do we want to do call once for both siteinfo and namespaces? bleah
+	GetterUrl getterUrl = new GetterUrl();
+	String contents = getterUrl.getUrl("http://localhost/elwikt/api.php?action=query&meta=siteinfo&siprop=general&format=json");
+	JSONObject generalSiteInfo = JSONObject.fromObject(contents);
+	JSONObject siteinfojson = generalSiteInfo.getJSONObject("query");
+	JSONObject generaljunkjson = siteinfojson.getJSONObject("general");
+
 	siteinfo = new Siteinfo();
-	siteinfo.setSitename("Βικιλεξικό");
-	siteinfo.setDbname("elwikt");
-	siteinfo.setBase("http://localhost/elwikt/index.php/%CE%92%CE%B9%CE%BA%CE%B9%CE%BB%CE%B5%CE%BE%CE%B9%CE%BA%CF%8C:%CE%9A%CF%8D%CF%81%CE%B9%CE%B1_%CE%A3%CE%B5%CE%BB%CE%AF%CE%B4%CE%B1");
-	siteinfo.setGenerator("MediaWiki 1.27.0-wmf.17");
-	siteinfo.setCase(Case.CASE_SENSITIVE);
+	siteinfo.setSitename(generaljunkjson.getString("sitename"));
+	siteinfo.setDbname(generaljunkjson.getString("wikiid"));
+	siteinfo.setBase(generaljunkjson.getString("base"));
+	siteinfo.setGenerator(generaljunkjson.getString("generator"));
+	siteinfo.setCase(Case.fromValue(generaljunkjson.getString("case")));
 	siteinfo.setNamespaces(namespaces);
-	System.out.println("size of siteinfo namespaces is now " + siteinfo.getNamespaces().getNamespace().size());
     }
 
     public Siteinfo getSiteinfo() {
