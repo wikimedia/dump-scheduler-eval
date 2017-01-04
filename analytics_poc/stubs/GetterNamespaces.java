@@ -26,11 +26,11 @@ import java.util.Iterator;
 public class GetterNamespaces {
     List<JSONObject> namespaces;
 
-    GetterNamespaces() throws MalformedURLException, IOException {
+    GetterNamespaces(String apiUrl) throws MalformedURLException, IOException {
 	namespaces = new ArrayList<JSONObject>();
 
 	GetterUrl getterUrl = new GetterUrl();
-	String contents = getterUrl.getUrl("http://localhost/elwikt/api.php?action=query&meta=siteinfo&siprop=namespaces&format=json");
+	String contents = getterUrl.getUrl(apiUrl + "?action=query&meta=siteinfo&siprop=namespaces&format=json");
 	// who knows the right thing to call here
 	// convert to json object
 	JSONObject namespaceInfo = JSONObject.fromObject(contents);
