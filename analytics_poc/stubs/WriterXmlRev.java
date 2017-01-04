@@ -164,9 +164,7 @@ public class WriterXmlRev {
 
 	mw.setSiteinfo(getterSite.getSiteinfo());
 	mw.setVersion("0.10");
-	// fixme we need to get this from some nice place, it's not
-	// always the first part of the wikiname is it? or...? better check this
-	mw.setLang("el");
+	mw.setLang(getterSite.getLang());
 
 	XMLStreamWriter writerStdout = XMLOutputFactory.newFactory().createXMLStreamWriter(System.out);
 	XMLStreamWriter writerFile = XMLOutputFactory.newFactory().createXMLStreamWriter(fileStream);

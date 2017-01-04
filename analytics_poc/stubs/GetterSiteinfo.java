@@ -24,9 +24,11 @@ import java.io.IOException;
 public class GetterSiteinfo {
 
     Siteinfo siteinfo;
+    // need this for the mediawiki xml header
+    String lang;
 
-    GetterSiteinfo() throws MalformedURLException, IOException {
-	GetterNamespaces getterNs = new GetterNamespaces();
+    GetterSiteinfo(String apiUrl) throws MalformedURLException, IOException {
+	GetterNamespaces getterNs = new GetterNamespaces(apiUrl);
 	List<JSONObject> namespacesJson = getterNs.getNamespaces();
 	Namespaces namespaces = new Namespaces();
 	for (JSONObject nspaceJson: namespacesJson) {
@@ -38,9 +40,8 @@ public class GetterSiteinfo {
 	}
 	List<Namespace> toput = namespaces.getNamespace();
 
-	// do we want to do call once for both siteinfo and namespaces? bleah
 	GetterUrl getterUrl = new GetterUrl();
-	String contents = getterUrl.getUrl("http://localhost/elwikt/api.php?action=query&meta=siteinfo&siprop=general&format=json");
+	String contents = getterUrl.getUrl(apiUrl + "?action=query&meta=siteinfo&siprop=general&format=json");
 	JSONObject generalSiteInfo = JSONObject.fromObject(contents);
 	JSONObject siteinfojson = generalSiteInfo.getJSONObject("query");
 	JSONObject generaljunkjson = siteinfojson.getJSONObject("general");
@@ -52,9 +53,14 @@ public class GetterSiteinfo {
 	siteinfo.setGenerator(generaljunkjson.getString("generator"));
 	siteinfo.setCase(Case.fromValue(generaljunkjson.getString("case")));
 	siteinfo.setNamespaces(namespaces);
+	lang = generaljunkjson.getString("lang");
     }
 
     public Siteinfo getSiteinfo() {
 	return siteinfo;
+    }
+
+    public String getLang() {
+	return lang;
     }
 }
