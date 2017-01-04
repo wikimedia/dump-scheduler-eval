@@ -29,7 +29,8 @@ public class GetterRev extends Getter {
     }
 
     public ResultSet getRevisionsForPage(int id) throws SQLException {
-	PreparedStatement query = conn.prepareStatement("select * from revision where rev_page = " + Integer.toString(id));
+	// fixme why is this so much slower, even for queries with 0 results, than without the explicit order?
+	PreparedStatement query = conn.prepareStatement("select * from revision where rev_page = " + Integer.toString(id) + " order by rev_id asc");
 	ResultSet result = query.executeQuery();
 	return(result);
     }
