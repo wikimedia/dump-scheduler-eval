@@ -16,7 +16,7 @@ public class Revision {
     int id;
     String timestamp;
     Contributor contributor;
-    String comment;
+    Comment comment;
     Text text;
     String sha1;
     String model;
@@ -31,7 +31,7 @@ public class Revision {
         return text;
     }
 
-    public String getComment() {
+    public Comment getComment() {
         return comment;
     }
 
@@ -70,7 +70,7 @@ public class Revision {
     }
 
     @XmlElement
-    public void setComment(String comment) {
+    public void setComment(Comment comment) {
         this.comment = comment;
     }
 

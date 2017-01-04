@@ -14,6 +14,7 @@ public class Text {
 
     int id;
     int bytes;
+    String deleted;
 
     public int getId() {
         return id;
@@ -21,6 +22,10 @@ public class Text {
 
     public int getBytes() {
         return bytes;
+    }
+
+    public String getDeleted() {
+        return deleted;
     }
 
     @XmlAttribute
@@ -31,6 +36,11 @@ public class Text {
     @XmlAttribute
     public void setBytes(int bytes) {
         this.bytes = bytes;
+    }
+
+    @XmlAttribute
+    public void setDeleted(String deleted) {
+        this.deleted = deleted;
     }
 } 
 

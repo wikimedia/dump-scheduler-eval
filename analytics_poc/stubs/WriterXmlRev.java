@@ -89,20 +89,42 @@ public class WriterXmlRev {
 
     public static void writeRevision(GetterRev getterRev, ResultSet revResults, Marshaller jaxbMarshaller, List<XMLStreamWriter> writers) throws SQLException, CharacterCodingException {
 	Revision rev = new Revision();
-	String field = getterRev.cleanupField("REV_ID", revResults);
+	String field = getterRev.cleanupField("REV_DELETED", revResults);
+	Integer deleted = Integer.parseInt(field);
+
+	field = getterRev.cleanupField("REV_ID", revResults);
 	rev.setId(Integer.parseInt(field));
-	field = getterRev.cleanupField("REV_COMMENT", revResults);
-	rev.setComment(field);
+	Comment comment = new Comment();
+	if ((deleted & 2) != 0) {
+	    // empty tag with 'deleted' attr here
+	    comment.setDeleted("deleted");
+	}
+	else {
+	    field = getterRev.cleanupField("REV_COMMENT", revResults);
+	    comment.setComment(field);
+	}
 	Text text = new Text();
-	field = getterRev.cleanupField("REV_TEXT_ID", revResults);
-	text.setId(Integer.parseInt(field));
-	field = getterRev.cleanupField("REV_LEN", revResults);
-	text.setBytes(Integer.parseInt(field));
+	if ((deleted & 1) != 0) {
+	    // empty tag with 'deleted' attr here
+	    text.setDeleted("deleted");
+	}
+	else {
+	    field = getterRev.cleanupField("REV_TEXT_ID", revResults);
+	    text.setId(Integer.parseInt(field));
+	    field = getterRev.cleanupField("REV_LEN", revResults);
+	    text.setBytes(Integer.parseInt(field));
+	}
 	Contributor contr = new Contributor();
-	field = getterRev.cleanupField("REV_USER", revResults);
-	contr.setId(Integer.parseInt(field));
-	field = getterRev.cleanupField("REV_USER_TEXT", revResults);
-	contr.setUsername(field);
+	if ((deleted & 4) != 0) {
+	    // empty tag with 'deleted' attr here
+	    contr.setDeleted("deleted");
+	}
+	else {
+	    field = getterRev.cleanupField("REV_USER", revResults);
+	    contr.setId(Integer.parseInt(field));
+	    field = getterRev.cleanupField("REV_USER_TEXT", revResults);
+	    contr.setUsername(field);
+	}
 	field = getterRev.cleanupField("REV_TIMESTAMP", revResults);
 	rev.setTimestamp(field);
 	field = getterRev.cleanupField("REV_MINOR_EDIT", revResults);
@@ -110,8 +132,14 @@ public class WriterXmlRev {
 	if (isMinor > 0) {
 	    rev.setMinor(new Empty());
 	}
-	field = getterRev.cleanupField("REV_SHA1", revResults);
-	rev.setSha1(field);
+	if ((deleted & 1) != 0) {
+	    // FIXMEEEEEE
+	    // empty tag here
+	}
+	else {
+	    field = getterRev.cleanupField("REV_SHA1", revResults);
+	    rev.setSha1(field);
+	}
 	try {
 	    field = getterRev.cleanupField("REV_CONTENT_MODEL", revResults);
 	    rev.setModel(field);
@@ -126,6 +154,7 @@ public class WriterXmlRev {
 	    // what is the null placeholder here?
 	    rev.setFormat("some_default_FIXME");
 	}
+	rev.setComment(comment);
 	rev.setContributor(contr);
 	rev.setText(text);
 	for (XMLStreamWriter writer: writers) {

@@ -14,6 +14,7 @@ public class Contributor {
 
     int id;
     String username;
+    String deleted;
 
     public String getUsername() {
         return username;
@@ -21,6 +22,10 @@ public class Contributor {
 
     public int getId() {
         return id;
+    }
+
+    public String getDeleted() {
+        return deleted;
     }
 
     @XmlElement
@@ -31,6 +36,11 @@ public class Contributor {
     @XmlElement
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    @XmlAttribute
+    public void setDeleted(String deleted) {
+        this.deleted = deleted;
     }
 } 
 
