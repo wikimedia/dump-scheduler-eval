@@ -138,13 +138,28 @@ public class WriterXmlRev {
     }
 
 
+    public static void usage(String message) {
+	System.out.println(message);
+	System.out.println("usage: java -cp classpath-here WriterXmlRev url-to-mw-api path-to-xml-output");
+	System.out.println("example: java -cp classpath-here WriterXmlRev http://localhost/elwikt/api.php mydump.xml");
+	System.exit(1);
+    }
+
     public static void main(String[] args) throws FileNotFoundException, SQLException, IOException, CharacterCodingException, ClassNotFoundException, XMLStreamException {
+	if (args.length < 1) {
+	    usage("no api url specified");
+	} else if (args.length < 2) {
+	    usage("no xml output filename specified");
+	}
+
+	String apiUrl = args[0];
+	String outputfile = args[1];
 	Marshaller jaxbMarshallerRev = getMarshaller(Revision.class);
 	Marshaller jaxbMarshallerSiteinfo = getMarshaller(Siteinfo.class);
-	File file = new File("myrev.xml");
+	File file = new File(outputfile);
 	PrintStream fileStream = new PrintStream(file);
 	String field = null;
-	GetterSiteinfo getterSite = new GetterSiteinfo();
+	GetterSiteinfo getterSite = new GetterSiteinfo(apiUrl);
 	Mediawiki mw = new Mediawiki();
 
 	mw.setSiteinfo(getterSite.getSiteinfo());
