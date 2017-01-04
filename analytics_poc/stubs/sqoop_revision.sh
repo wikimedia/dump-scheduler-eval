@@ -17,6 +17,6 @@ sqoop import --username root --connect 'jdbc:mysql://localhost/elwikt' --as-avro
     convert(rev_sha1 using utf8) rev_sha1,            \
     convert(rev_content_format using utf8) rev_content_format, \
     convert(rev_content_model using utf8) rev_content_model    \
-      from revision where rev_id > 2700000 and rev_id < 2705000 and \$CONDITIONS" \
+      from revision where rev_id > 2700000 and rev_id < 2800000 and \$CONDITIONS" \
   --num-mappers 1 \
   -P
