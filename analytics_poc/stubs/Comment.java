@@ -1,5 +1,6 @@
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlValue;
 
 public class Comment {
 
@@ -14,7 +15,7 @@ public class Comment {
         return deleted;
     }
 
-    @XmlElement
+    @XmlValue
     public void setComment(String comment) {
         this.comment = comment;
     }
