@@ -1,17 +1,11 @@
-import javax.xml.bind.annotation.XmlAttribute;
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.io.File;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import java.util.List;
-import java.util.ArrayList;
 
 @XmlRootElement
-@XmlType(propOrder={"title", "ns", "id", "revision"})
-// @XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(propOrder = {"title", "ns", "id", "revision"})
 public class Page {
 
     Integer id;
@@ -31,7 +25,7 @@ public class Page {
         return ns;
     }
 
-    @XmlElement(name="revision")
+    @XmlElement(name = "revision")
     public List<Revision> getRevision() {
         if (revision == null) {
             revision = new ArrayList<Revision>();

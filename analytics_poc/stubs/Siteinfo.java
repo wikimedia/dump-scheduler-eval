@@ -1,15 +1,10 @@
-import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.io.File;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 
 
 @XmlRootElement
-@XmlType(propOrder={"sitename", "dbname", "base", "generator", "case", "namespaces"})
+@XmlType(propOrder = {"sitename", "dbname", "base", "generator", "case", "namespaces"})
 public class Siteinfo {
 
     String sitename;
@@ -22,18 +17,23 @@ public class Siteinfo {
     public String getSitename() {
         return sitename;
     }
+
     public String getDbname() {
         return dbname;
     }
+
     public String getBase() {
         return base;
     }
+
     public String getGenerator() {
         return generator;
     }
+
     public Case getCase() {
         return _case;
     }
+
     public Namespaces getNamespaces() {
         return namespaces;
     }
@@ -58,7 +58,7 @@ public class Siteinfo {
         this.generator = generator;
     }
 
-    @XmlElement(name="case")
+    @XmlElement(name = "case")
     public void setCase(Case _case) {
         this._case = _case;
     }

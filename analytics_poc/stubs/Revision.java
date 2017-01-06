@@ -1,15 +1,11 @@
-import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.io.File;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 
 
 @XmlRootElement
-@XmlType(propOrder={"id", "timestamp", "contributor", "comment", "minor", "model", "format", "text", "sha1"})
+@XmlType(propOrder = {"id", "timestamp", "contributor",
+                      "comment", "minor", "model", "format", "text", "sha1"})
 // @XmlAccessorType(XmlAccessType.FIELD)
 public class Revision {
 
@@ -69,7 +65,7 @@ public class Revision {
         this.text = text;
     }
 
-    @XmlElement
+    @XmlElement(nillable = true)
     public void setComment(Comment comment) {
         this.comment = comment;
     }
@@ -84,7 +80,7 @@ public class Revision {
         this.timestamp = tstamp;
     }
 
-    @XmlElement(required=false)
+    @XmlElement(required = false)
     public void setMinor(Empty minor) {
         this.minor = minor;
     }

@@ -1,17 +1,13 @@
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.io.File;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import java.util.List;
-import java.util.ArrayList;
 
 
-@XmlRootElement(namespace="http://www.mediawiki.org/xml/export-0.10/")
-@XmlType(propOrder={"siteinfo", "page"})
+@XmlRootElement(namespace = "http://www.mediawiki.org/xml/export-0.10/")
+@XmlType(propOrder = {"siteinfo", "page"})
 public class Mediawiki {
 
     Siteinfo siteinfo;
@@ -21,10 +17,10 @@ public class Mediawiki {
     String lang;
     
     public Siteinfo getSiteinfo() {
-	return siteinfo;
+        return siteinfo;
     }
 
-    @XmlElement(name="page")
+    @XmlElement(name = "page")
     public List<Page> getPage() {
         if (page == null) {
             page = new ArrayList<Page>();
@@ -50,7 +46,7 @@ public class Mediawiki {
         this.version = version;
     }
 
-    @XmlAttribute(namespace="http://www.w3.org/XML/1998/namespace")
+    @XmlAttribute(namespace = "http://www.w3.org/XML/1998/namespace")
     public void setLang(String lang) {
         this.lang = lang;
     }
